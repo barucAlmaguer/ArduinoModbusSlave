@@ -64,7 +64,10 @@ private:
     uint32_t timeout;
     uint32_t last_receive_time;
     uint16_t last_receive_len;
+    uint16_t interchar_delay;
+    uint16_t boudrate;
     uint16_t calcCRC(uint8_t *buf, int length);
+    bool      serial_timeout(int chars);
 
     int ctrlPin;
     uint8_t unitID;

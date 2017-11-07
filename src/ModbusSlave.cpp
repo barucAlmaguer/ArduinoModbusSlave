@@ -50,6 +50,7 @@ Modbus::Modbus(Stream &_serial, uint8_t _unitID, int _ctrlPin)
  * @param boud the serial port boud rate.
  */
 void Modbus::begin(unsigned long boud) {
+    boudrate = boud;
     // set control pin
     if (ctrlPin) {
         pinMode(ctrlPin, OUTPUT);
@@ -61,9 +62,11 @@ void Modbus::begin(unsigned long boud) {
     // set the T35 interframe timeout
     if (boud > 19200) {
         timeout = 1750;
+        interchar_delay = 750;
     }
     else {
-        timeout = 35000000 / boud; // 1T * 3.5 = T3.5
+        timeout = 3500000 / boud; // 1T * 3.5 = T3.5
+        interchar_delay = 1500000 / boud;
     }
 
     // init last received values
@@ -100,10 +103,28 @@ uint16_t Modbus::calcCRC(uint8_t *buf, int length) {
     return crc;
 }
 
+/*
+ * Funcion que espera hasta recibir otro caracter o 
+ * superar n intervalos de caracteres
+*/
+bool Modbus::serial_timeout(int chars){
+    long startTime = micros();
+    int av_chars = serial.available();
+    long elapsed = micros() - startTime;
+    long timeout = chars * 1000000L / boudrate;
+    while(  elapsed < timeout && 
+            serial.available() == av_chars){
+        elapsed = micros() - startTime;
+    }
+    return elapsed >= timeout ? true : false;
+}
+
 /**
  * wait for end of frame, parse request and answer it.
  */
 int Modbus::poll() {
+    //Serial.println("Polleando...");
+    //delay(100);
     int lengthIn;
     int lengthOut;
     uint16_t crc;
@@ -124,8 +145,8 @@ int Modbus::poll() {
         if (available_len != last_receive_len) {
             last_receive_len = available_len;
             last_receive_time = micros();
-
-            return 0;
+            serial_timeout(100);
+            return 0; //Sigo esperando trama completa
         }
 
         // if no new data, wait for T35 microseconds.
