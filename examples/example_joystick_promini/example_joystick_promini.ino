@@ -4,7 +4,7 @@
 #define JOY_X       A1
 #define JOY_Y       A0
 #define MODBUS_RT   2
-#define MODBUS_PORT Serial1
+#define MODBUS_PORT Serial
 
 // explicitly set stream to use the Serial serialport
 Modbus slave(MODBUS_PORT, 2, MODBUS_RT); // stream = Serial, slave id = 1, rs485 control-pin = 8
